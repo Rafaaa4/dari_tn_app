@@ -98,15 +98,6 @@ Supabase Dashboard -> Authentication -> Providers -> Email -> Confirm email
 
 This avoids email confirmation limits while testing registrations.
 
-## Demo Accounts
-
-You can create these accounts manually in Supabase Auth or register them from the app:
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Tenant | tenant@dari.tn | Tenant@123 |
-| Owner | owner@dari.tn | Owner@123 |
-| Admin | admin@dari.tn | Admin@123 |
 
 Make sure each account has a matching row in `public.users` with the correct role: `tenant`, `owner`, or `admin`.
 

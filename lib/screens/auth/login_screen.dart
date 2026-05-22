@@ -8,7 +8,14 @@ import 'package:dari_app/widgets/loading_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final bool adminMode;
+  final bool showRegisterLink;
+
+  const LoginScreen({
+    super.key,
+    this.adminMode = false,
+    this.showRegisterLink = true,
+  });
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -45,7 +52,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() => _error = error);
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.go(AppRoutes.home);
+        if (!mounted) return;
+        context.go(widget.adminMode ? AppRoutes.admin : AppRoutes.home);
       });
     }
   }
@@ -74,42 +82,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: Colors.white, size: 32),
                 ),
                 const SizedBox(height: 32),
-                Text('Bon retour ! 👋',
+                Text(widget.adminMode ? 'Administration' : 'Bon retour !',
                     style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),
-                Text('Connectez-vous à votre compte Dari.tn',
+                Text(
+                    widget.adminMode
+                        ? 'Connectez-vous avec un compte administrateur'
+                        : 'Connectez-vous à votre compte Dari.tn',
                     style: Theme.of(context)
                         .textTheme
                         .bodyLarge
                         ?.copyWith(color: AppTheme.textGrey)),
-                const SizedBox(height: 40),
-
-                // Demo accounts info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: AppTheme.primary.withValues(alpha: 0.2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Comptes de démo',
-                          style: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                              color: AppTheme.primary)),
-                      const SizedBox(height: 8),
-                      _demoInfo('Locataire', 'tenant@dari.tn', 'Tenant@123'),
-                      _demoInfo('Propriétaire', 'owner@dari.tn', 'Owner@123'),
-                      _demoInfo('Admin', 'admin@dari.tn', 'Admin@123'),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 32),
-
                 Text('Email', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -178,45 +162,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: 'Se connecter',
                   ),
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Pas encore de compte ?',
-                        style: GoogleFonts.plusJakartaSans(
-                            color: AppTheme.textGrey)),
-                    TextButton(
-                      onPressed: () => context.go(AppRoutes.register),
-                      child: Text('Créer un compte',
+                if (widget.showRegisterLink) ...[
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Pas encore de compte ?',
                           style: GoogleFonts.plusJakartaSans(
-                              color: AppTheme.primary,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ),
+                              color: AppTheme.textGrey)),
+                      TextButton(
+                        onPressed: () => context.go(AppRoutes.register),
+                        child: Text('Créer un compte',
+                            style: GoogleFonts.plusJakartaSans(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _demoInfo(String role, String email, String password) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        children: [
-          Text('$role: ',
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12, color: AppTheme.textGrey)),
-          Text(email,
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12, fontWeight: FontWeight.w500)),
-          Text(' / $password',
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12, color: AppTheme.textGrey)),
-        ],
       ),
     );
   }

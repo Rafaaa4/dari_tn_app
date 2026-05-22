@@ -32,12 +32,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authState = ref.read(authStateProvider);
       final isLoading = authState.isLoading;
-      final isLoggedIn = authState.valueOrNull != null;
+      final user = authState.valueOrNull;
+      final isLoggedIn = user != null;
       final location = state.matchedLocation;
       final isSplash = location == AppRoutes.splash;
       final isOnboarding = location == AppRoutes.onboarding;
-      final isAuthRoute =
-          location == AppRoutes.login || location == AppRoutes.register;
+      final isAuthRoute = location == AppRoutes.login ||
+          location == AppRoutes.adminLogin ||
+          location == AppRoutes.register;
+      final isAdminRoute = location == AppRoutes.admin;
 
       if (isLoading) {
         if (isSplash || isAuthRoute) return null;
@@ -45,10 +48,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       if (!isLoggedIn) {
         if (isSplash) return AppRoutes.onboarding;
+        if (isAdminRoute) return AppRoutes.adminLogin;
         if (!isAuthRoute && !isOnboarding) return AppRoutes.login;
         return null;
       }
-      if (isSplash || isOnboarding || isAuthRoute) return AppRoutes.home;
+      if (isAdminRoute && !user.isAdmin) return AppRoutes.home;
+      if (location == AppRoutes.adminLogin) {
+        return user.isAdmin ? AppRoutes.admin : AppRoutes.home;
+      }
+      if (isSplash || isOnboarding || isAuthRoute) {
+        return user.isAdmin ? AppRoutes.admin : AppRoutes.home;
+      }
       return null;
     },
     routes: [
@@ -59,6 +69,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.adminLogin,
+        builder: (_, __) => const LoginScreen(
+          adminMode: true,
+          showRegisterLink: false,
+        ),
       ),
       GoRoute(
         path: AppRoutes.register,

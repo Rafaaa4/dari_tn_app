@@ -94,6 +94,24 @@ CREATE POLICY "Users can insert own profile." ON public.users FOR INSERT WITH CH
 -- Allow users to update their own profile
 CREATE POLICY "Users can update own profile." ON public.users FOR UPDATE USING (auth.uid() = id);
 
+-- Helper used by admin RLS policies
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = auth.uid()
+      AND role = 'admin'
+      AND status = 'active'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP POLICY IF EXISTS "Admins can manage users." ON public.users;
+CREATE POLICY "Admins can manage users." ON public.users
+FOR ALL USING (public.is_admin())
+WITH CHECK (public.is_admin());
+
 -- Allow owners to manage their own properties and images
 DROP POLICY IF EXISTS "Owners can view own properties." ON public.properties;
 DROP POLICY IF EXISTS "Owners can insert own properties." ON public.properties;
@@ -104,6 +122,11 @@ CREATE POLICY "Owners can insert own properties." ON public.properties
 FOR INSERT WITH CHECK (auth.uid() = owner_id);
 CREATE POLICY "Owners can update own properties." ON public.properties
 FOR UPDATE USING (auth.uid() = owner_id) WITH CHECK (auth.uid() = owner_id);
+
+DROP POLICY IF EXISTS "Admins can manage properties." ON public.properties;
+CREATE POLICY "Admins can manage properties." ON public.properties
+FOR ALL USING (public.is_admin())
+WITH CHECK (public.is_admin());
 
 CREATE POLICY "Owners can insert images for own properties." ON public.property_images
 FOR INSERT WITH CHECK (
@@ -146,6 +169,11 @@ FOR SELECT USING (auth.uid() = owner_id);
 CREATE POLICY "Owners can update property bookings." ON public.bookings
 FOR UPDATE USING (auth.uid() = owner_id)
 WITH CHECK (auth.uid() = owner_id);
+
+DROP POLICY IF EXISTS "Admins can manage bookings." ON public.bookings;
+CREATE POLICY "Admins can manage bookings." ON public.bookings
+FOR ALL USING (public.is_admin())
+WITH CHECK (public.is_admin());
 
 -- Trigger to insert user into public.users after auth.users signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()

@@ -2,6 +2,7 @@ class AppRoutes {
   static const splash = '/splash';
   static const onboarding = '/onboarding';
   static const login = '/auth/login';
+  static const adminLogin = '/admin-login';
   static const register = '/auth/register';
   static const home = '/home';
   static const favorites = '/favorites';

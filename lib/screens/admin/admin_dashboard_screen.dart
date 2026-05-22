@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:dari_app/core/constants/app_routes.dart';
 import 'package:dari_app/core/theme/app_theme.dart';
+import 'package:dari_app/providers/auth_provider.dart';
 import 'package:dari_app/repositories/auth_repository.dart';
 import 'package:dari_app/repositories/property_repository.dart';
 import 'package:dari_app/repositories/booking_repository.dart';
@@ -28,7 +31,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
     _load();
   }
 
@@ -39,6 +42,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   Future<void> _load() async {
+    setState(() => _loading = true);
     _users = await AuthRepository().getAllUsers();
     _properties = await PropertyRepository().getAllProperties();
     _bookings = await BookingRepository().getAllBookings();
@@ -47,9 +51,27 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(currentUserProvider);
+    if (currentUser?.isAdmin != true) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Accès refusé')),
+        body: Center(
+          child: ElevatedButton.icon(
+            onPressed: () => context.go(AppRoutes.home),
+            icon: const Icon(Icons.home_rounded),
+            label: const Text('Retour accueil'),
+          ),
+        ),
+      );
+    }
+
     final totalRevenue = _bookings
         .where((b) => b.paymentStatus == 'paid')
         .fold(0.0, (s, b) => s + b.totalPrice);
+    final paidBookings =
+        _bookings.where((b) => b.paymentStatus == 'paid').length;
+    final conversionRate =
+        _bookings.isEmpty ? 0.0 : (paidBookings / _bookings.length) * 100;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -76,7 +98,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           labelColor: AppTheme.primary,
           unselectedLabelColor: AppTheme.textGrey,
           indicatorColor: AppTheme.primary,
+          isScrollable: true,
           tabs: const [
+            Tab(text: 'Vue globale'),
             Tab(text: 'Utilisateurs'),
             Tab(text: 'Annonces'),
             Tab(text: 'Réservations'),
@@ -105,57 +129,228 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                 ),
                 Expanded(
-                  child: TabBarView(
-                    controller: _tab,
-                    children: [
-                      // Users list
-                      ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _users.length,
-                        itemBuilder: (_, i) => _UserTile(
-                          user: _users[i],
-                          onToggle: () async {
-                            final newStatus = _users[i].status == 'active'
-                                ? 'blocked'
-                                : 'active';
-                            await AuthRepository()
-                                .toggleUserStatus(_users[i].id!, newStatus);
-                            _load();
-                          },
+                  child: RefreshIndicator(
+                    onRefresh: _load,
+                    child: TabBarView(
+                      controller: _tab,
+                      children: [
+                        _AdminOverviewTab(
+                          users: _users,
+                          properties: _properties,
+                          bookings: _bookings,
+                          totalRevenue: totalRevenue,
+                          conversionRate: conversionRate,
                         ),
-                      ),
-
-                      // Properties list
-                      ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _properties.length,
-                        itemBuilder: (_, i) => _PropertyTile(
-                          property: _properties[i],
-                          onApprove: () async {
-                            await PropertyRepository().setPropertyStatus(
-                                _properties[i].id!, 'published');
-                            _load();
-                          },
-                          onReject: () async {
-                            await PropertyRepository().setPropertyStatus(
-                                _properties[i].id!, 'refused');
-                            _load();
-                          },
+                        ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: _users.length,
+                          itemBuilder: (_, i) => _UserTile(
+                            user: _users[i],
+                            onToggle: () async {
+                              final newStatus = _users[i].status == 'active'
+                                  ? 'blocked'
+                                  : 'active';
+                              await AuthRepository()
+                                  .toggleUserStatus(_users[i].id!, newStatus);
+                              _load();
+                            },
+                          ),
                         ),
-                      ),
-
-                      // Bookings list
-                      ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _bookings.length,
-                        itemBuilder: (_, i) =>
-                            _BookingTile(booking: _bookings[i]),
-                      ),
-                    ],
+                        ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: _properties.length,
+                          itemBuilder: (_, i) => _PropertyTile(
+                            property: _properties[i],
+                            onApprove: () async {
+                              await PropertyRepository().setPropertyStatus(
+                                  _properties[i].id!, 'published');
+                              _load();
+                            },
+                            onReject: () async {
+                              await PropertyRepository().setPropertyStatus(
+                                  _properties[i].id!, 'refused');
+                              _load();
+                            },
+                          ),
+                        ),
+                        ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: _bookings.length,
+                          itemBuilder: (_, i) =>
+                              _BookingTile(booking: _bookings[i]),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _AdminOverviewTab extends StatelessWidget {
+  final List<UserModel> users;
+  final List<PropertyModel> properties;
+  final List<BookingModel> bookings;
+  final double totalRevenue;
+  final double conversionRate;
+
+  const _AdminOverviewTab({
+    required this.users,
+    required this.properties,
+    required this.bookings,
+    required this.totalRevenue,
+    required this.conversionRate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final owners = users.where((u) => u.isOwner).length;
+    final tenants = users.where((u) => u.isTenant).length;
+    final blocked = users.where((u) => u.status == 'blocked').length;
+    final pendingProperties =
+        properties.where((p) => p.status == 'pending').length;
+    final publishedProperties =
+        properties.where((p) => p.status == 'published').length;
+    final paidBookings =
+        bookings.where((b) => b.paymentStatus == 'paid').length;
+    final pendingBookings = bookings.where((b) => b.status == 'pending').length;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Business intelligence',
+            style: GoogleFonts.plusJakartaSans(
+                fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            _InsightCard('Revenus payés', '${totalRevenue.toInt()} TND',
+                Icons.payments_rounded, AppTheme.primary),
+            _InsightCard(
+                'Conversion paiement',
+                '${conversionRate.toStringAsFixed(0)}%',
+                Icons.insights,
+                AppTheme.secondary),
+            _InsightCard('Annonces publiées', '$publishedProperties',
+                Icons.home_rounded, AppTheme.secondary),
+            _InsightCard('Annonces à valider', '$pendingProperties',
+                Icons.pending_actions_rounded, AppTheme.warning),
+            _InsightCard('Réservations payées', '$paidBookings',
+                Icons.verified_rounded, AppTheme.primary),
+            _InsightCard('Demandes en attente', '$pendingBookings',
+                Icons.calendar_month_rounded, AppTheme.warning),
+            _InsightCard('Propriétaires', '$owners', Icons.apartment_rounded,
+                AppTheme.secondary),
+            _InsightCard('Locataires', '$tenants', Icons.people_alt_rounded,
+                AppTheme.primary),
+            _InsightCard('Comptes bloqués', '$blocked', Icons.block_rounded,
+                AppTheme.error),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text('Priorités manager',
+            style: GoogleFonts.plusJakartaSans(
+                fontSize: 16, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        _PriorityTile(
+          icon: Icons.fact_check_rounded,
+          title: 'Validation annonces',
+          value: '$pendingProperties en attente',
+          color: pendingProperties == 0 ? AppTheme.secondary : AppTheme.warning,
+        ),
+        _PriorityTile(
+          icon: Icons.support_agent_rounded,
+          title: 'Suivi réservations',
+          value: '$pendingBookings demandes ouvertes',
+          color: pendingBookings == 0 ? AppTheme.secondary : AppTheme.warning,
+        ),
+        _PriorityTile(
+          icon: Icons.security_rounded,
+          title: 'Modération utilisateurs',
+          value: '$blocked comptes bloqués',
+          color: blocked == 0 ? AppTheme.secondary : AppTheme.error,
+        ),
+      ],
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _InsightCard(this.label, this.value, this.icon, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width >= 700 ? 210 : 160,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.borderColor(context)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 10),
+            Text(value,
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 2),
+            Text(label,
+                style: const TextStyle(fontSize: 11, color: AppTheme.textGrey)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PriorityTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color color;
+
+  const _PriorityTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(title,
+                style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700, fontSize: 13)),
+          ),
+          _Badge(value, color),
+        ],
+      ),
     );
   }
 }
