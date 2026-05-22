@@ -1,0 +1,1 @@
+/home/rafa3/Downloads/dari_app_flutter/dari_app/build/app/outputs/flutter-apk/app-debug.apk
