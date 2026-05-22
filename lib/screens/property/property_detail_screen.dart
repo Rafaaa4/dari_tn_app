@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dari_app/core/constants/app_routes.dart';
 import 'package:dari_app/core/theme/app_theme.dart';
 import 'package:dari_app/providers/auth_provider.dart';
@@ -133,16 +132,23 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                 final img = property.images[i];
                                 return img.startsWith('/')
                                     ? Image.file(File(img), fit: BoxFit.cover)
-                                    : CachedNetworkImage(
-                                        imageUrl: img,
+                                    : Image.network(
+                                        img,
                                         fit: BoxFit.cover,
-                                        placeholder: (_, __) => Container(
-                                          color: AppTheme.mutedSurface(context),
-                                          child: const Center(
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 2)),
-                                        ),
-                                        errorWidget: (_, __, ___) => Container(
+                                        loadingBuilder: (_, child, progress) =>
+                                            progress == null
+                                                ? child
+                                                : Container(
+                                                    color:
+                                                        AppTheme.mutedSurface(
+                                                            context),
+                                                    child: const Center(
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                                strokeWidth:
+                                                                    2)),
+                                                  ),
+                                        errorBuilder: (_, __, ___) => Container(
                                           color: AppTheme.mutedSurface(context),
                                           child: const Icon(
                                               Icons.broken_image_rounded,

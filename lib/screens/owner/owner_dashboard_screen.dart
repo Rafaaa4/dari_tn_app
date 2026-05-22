@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dari_app/core/constants/app_routes.dart';
 import 'package:dari_app/core/theme/app_theme.dart';
 import 'package:dari_app/providers/auth_provider.dart';
@@ -259,11 +258,14 @@ class _OwnerPropertyTile extends StatelessWidget {
                               errorBuilder: (_, __, ___) =>
                                   _imgPlaceholder(context),
                             )
-                          : CachedNetworkImage(
-                              imageUrl: property.images.first,
+                          : Image.network(
+                              property.images.first,
                               fit: BoxFit.cover,
-                              placeholder: (_, __) => _imgPlaceholder(context),
-                              errorWidget: (_, __, ___) =>
+                              loadingBuilder: (_, child, progress) =>
+                                  progress == null
+                                      ? child
+                                      : _imgPlaceholder(context),
+                              errorBuilder: (_, __, ___) =>
                                   _imgPlaceholder(context),
                             )
                       : _imgPlaceholder(context),

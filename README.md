@@ -1,205 +1,210 @@
-# 🏠 Dari.tn — Application Flutter de Location Immobilière
+# Dari.tn - Flutter Real Estate Rental App
 
-Une application mobile complète pour la location de maisons, appartements et studios en Tunisie.
+Dari.tn is a Flutter mobile app for renting houses, apartments, and studios in Tunisia. The app uses Supabase for authentication, PostgreSQL data, row level security, and live backend storage.
 
----
+## Features
 
-## 📱 Fonctionnalités
+### Tenants
+- Browse published properties.
+- Search and filter by city, property type, and text.
+- View property details, images, owner info, reviews, and pricing.
+- Save favorite properties.
+- Create reservations with automatic price calculation.
+- Use simulated payment flow for demo bookings.
+- View booking history.
 
-### Pour les Locataires
-- 🔍 Recherche par ville, type, prix
-- ⭐ Annonces sponsorisées en premier
-- ❤️ Favoris
-- 📅 Réservation avec calcul automatique du prix
-- 💳 Paiement simulé (prêt pour intégration réelle)
-- 📋 Historique des réservations
-- ⭐ Avis et notes
+### Owners
+- Publish and edit property listings.
+- Add local or network image paths for listings.
+- View owner dashboard with listing stats and booking requests.
+- Accept or refuse booking requests.
+- Sponsor listings with demo plans.
 
-### Pour les Propriétaires
-- 🏠 Publication d'annonces avec photos
-- 📊 Tableau de bord avec statistiques (vues, demandes)
-- 🚀 Sponsoring d'annonces (3 offres disponibles)
-- ✅ Gestion des demandes de réservation (accepter/refuser)
+### Admins
+- View users, properties, bookings, and platform stats.
+- Approve or refuse listings.
+- Manage user status.
 
-### Pour les Administrateurs
-- 👥 Gestion des utilisateurs (bloquer/débloquer)
-- 🏡 Validation des annonces
-- 💰 Vue globale des réservations et revenus
+## Tech Stack
 
----
+- Flutter and Dart
+- Supabase Auth
+- Supabase PostgreSQL
+- Supabase Row Level Security
+- Riverpod for state management
+- GoRouter for navigation
+- Material 3 UI
+- Google Fonts
+- Image Picker
+- Cached Network Image
 
-## 🗃️ Base de données
+## Backend
 
-SQLite locale avec 9 tables :
-- `users` — Comptes utilisateurs
-- `properties` — Annonces immobilières
-- `property_images` — Photos des propriétés
-- `favorites` — Favoris utilisateurs
-- `bookings` — Réservations
-- `sponsored_ads` — Offres de sponsoring
-- `payments` — Historique paiements
-- `reviews` — Avis et notes
-- `messages` — Messagerie (structure prête)
+All main data is stored in Supabase tables:
 
----
+- `users`
+- `properties`
+- `property_images`
+- `favorites`
+- `bookings`
+- `reviews`
+- `sponsored_ads`
 
-## 🚀 Installation
+The database schema and RLS policies are in:
 
-### Prérequis
-- Flutter SDK >= 3.0.0
-- Android Studio ou VS Code
-- Dart >= 3.0.0
+```text
+supabase_schema.sql
+```
 
-### Étapes
+For an existing Supabase database, do not rerun the full `CREATE TABLE` script if tables already exist. Run only the needed `ALTER TABLE`, `DROP POLICY`, and `CREATE POLICY` blocks.
+
+## Environment Setup
+
+Create a `.env` file in the project root:
+
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+The app loads this file in [main.dart](lib/main.dart).
+
+## Installation
 
 ```bash
-# 1. Extraire le projet
-unzip dari_app.zip
-cd dari_app
-
-# 2. Installer les dépendances
 flutter pub get
-
-# 3. Lancer l'application
 flutter run
 ```
 
----
+If the app behaves strangely after router/auth changes, use a full restart:
 
-## 🔑 Comptes de démo
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
 
-| Rôle | Email | Mot de passe |
-|------|-------|-------------|
-| Locataire | tenant@dari.tn | Tenant@123 |
-| Propriétaire | owner@dari.tn | Owner@123 |
+## Supabase Setup
+
+1. Create a Supabase project.
+2. Open Supabase SQL Editor.
+3. Run `supabase_schema.sql`.
+4. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env`.
+5. In development, you can disable email confirmation from:
+
+```text
+Supabase Dashboard -> Authentication -> Providers -> Email -> Confirm email
+```
+
+This avoids email confirmation limits while testing registrations.
+
+## Demo Accounts
+
+You can create these accounts manually in Supabase Auth or register them from the app:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Tenant | tenant@dari.tn | Tenant@123 |
+| Owner | owner@dari.tn | Owner@123 |
 | Admin | admin@dari.tn | Admin@123 |
 
----
+Make sure each account has a matching row in `public.users` with the correct role: `tenant`, `owner`, or `admin`.
 
-## 📁 Structure du projet
+## Project Structure
 
-```
+```text
 lib/
-├── main.dart                    # Point d'entrée
-├── app.dart                     # Configuration app
+├── main.dart
+├── app.dart
 ├── core/
 │   ├── constants/
-│   │   ├── app_constants.dart   # Constantes globales
-│   │   └── app_router.dart      # Navigation GoRouter
+│   │   ├── app_constants.dart
+│   │   ├── app_router.dart
+│   │   └── app_routes.dart
 │   └── theme/
-│       └── app_theme.dart       # Thème Material 3
-├── database/
-│   └── app_database.dart        # SQLite + seed data
-├── models/                      # Modèles de données
-│   ├── user_model.dart
-│   ├── property_model.dart
+│       └── app_theme.dart
+├── models/
 │   ├── booking_model.dart
-│   └── review_model.dart
-├── repositories/                # Accès base de données
-│   ├── auth_repository.dart
-│   ├── property_repository.dart
-│   └── booking_repository.dart  # + SponsorRepository
-├── providers/                   # État Riverpod
+│   ├── property_model.dart
+│   ├── review_model.dart
+│   └── user_model.dart
+├── providers/
 │   ├── auth_provider.dart
-│   └── property_provider.dart
+│   ├── property_provider.dart
+│   └── theme_provider.dart
+├── repositories/
+│   ├── auth_repository.dart
+│   ├── booking_repository.dart
+│   └── property_repository.dart
 ├── screens/
-│   ├── auth/                    # Splash, Onboarding, Login, Register
-│   ├── home/                    # Home, Favoris, MainShell
-│   ├── property/                # Détail, Ajout propriété
-│   ├── owner/                   # Dashboard, Sponsoring
-│   ├── booking/                 # Réservation, Mes réservations
-│   ├── profile/                 # Profil
-│   └── admin/                   # Panneau admin
-└── widgets/                     # Composants réutilisables
+│   ├── admin/
+│   ├── auth/
+│   ├── booking/
+│   ├── home/
+│   ├── owner/
+│   ├── profile/
+│   └── property/
+└── widgets/
+    ├── loading_widget.dart
     ├── property_card.dart
-    ├── sponsored_property_card.dart
-    └── loading_widget.dart
+    └── sponsored_property_card.dart
 ```
 
----
+## Navigation
 
-## 🎨 Design System
+Routes are centralized in:
 
-### Couleurs
-| Rôle | Couleur |
-|------|---------|
-| Primary | `#2563EB` (Bleu) |
-| Secondary | `#10B981` (Vert) |
-| Background | `#F8FAFC` |
-| Warning | `#F59E0B` (Or) |
-| Error | `#EF4444` (Rouge) |
-
-### Typographie
-- Police : **Plus Jakarta Sans** (Google Fonts)
-- Design : Material Design 3 avec `useMaterial3: true`
-
----
-
-## 📦 Packages utilisés
-
-| Package | Usage |
-|---------|-------|
-| `flutter_riverpod` | State management |
-| `go_router` | Navigation |
-| `sqflite` | Base de données SQLite |
-| `image_picker` | Sélection photos |
-| `google_fonts` | Typographie |
-| `shimmer` | Loading skeletons |
-| `flutter_secure_storage` | Session sécurisée |
-| `crypto` | Hash mot de passe (SHA-256) |
-| `intl` | Formatage dates |
-| `dio` | HTTP (prêt pour backend) |
-
----
-
-## 🗺️ Sprints MVP complétés
-
-- ✅ Sprint 1 — Setup & structure
-- ✅ Sprint 2 — Base SQLite (9 tables)
-- ✅ Sprint 3 — Authentification locale
-- ✅ Sprint 4 — Publications immobilières
-- ✅ Sprint 5 — Recherche & filtres
-- ✅ Sprint 6 — Réservations & paiement mock
-- ✅ Sprint 7 — Système sponsoring (3 offres)
-- ✅ Sprint 8 — Admin dashboard
-
----
-
-## 🔮 Évolutions futures
-
-- [ ] Backend REST API (Node.js / Spring Boot)
-- [ ] PostgreSQL / Supabase
-- [ ] Paiement réel : Stripe, Konnect, Flouci
-- [ ] Google Maps intégration
-- [ ] Chat temps réel
-- [ ] Notifications push (FCM)
-- [ ] Contrats PDF automatiques
-- [ ] Dark mode
-- [ ] Multi-langue (AR/FR/EN)
-- [ ] Dashboard web admin
-
----
-
-## 🏗️ Architecture future
-
-```
-Flutter App (Dart)
-       ↓
-REST API Backend (Node.js / Spring Boot)
-       ↓
-PostgreSQL + Redis
-       ↓
-Payment Gateway (Stripe / Konnect)
-       ↓
-Push Notifications (FCM)
+```text
+lib/core/constants/app_routes.dart
+lib/core/constants/app_router.dart
 ```
 
----
+Use `AppRoutes` instead of hardcoded strings:
 
-## 📄 Licence
+```dart
+context.go(AppRoutes.home);
+context.push(AppRoutes.property(propertyId));
+```
 
-MIT License — Libre d'utilisation pour vos projets.
+This keeps navigation safer and avoids route typos.
 
----
+## Common Supabase Issues
 
-*Développé avec ❤️ pour la communauté Flutter tunisienne*
+### 429 over email send rate limit
+
+Supabase is rate-limiting auth emails. Wait a few minutes, use another test email, or disable email confirmation during development.
+
+### Row level security error
+
+Check that the matching RLS policy exists for the table. The main policies are included in `supabase_schema.sql`.
+
+### Missing column in schema cache
+
+If Supabase says a column does not exist, run the matching `ALTER TABLE` statement and refresh/restart the app.
+
+## Current Status
+
+Implemented:
+
+- Supabase Auth login/register/logout
+- Role-based app behavior
+- Property listing and publishing
+- Favorites
+- Booking and mock payment
+- Owner dashboard
+- Sponsoring flow
+- Admin dashboard
+- Light/dark theme support
+
+Planned improvements:
+
+- Real payment integration
+- Real image upload to Supabase Storage
+- Push notifications
+- Chat between tenant and owner
+- Maps integration
+- Multi-language support
+
+## License
+
+MIT License.

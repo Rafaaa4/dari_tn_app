@@ -20,7 +20,6 @@ dependencies:
 
   # Images
   image_picker: ^1.1.2
-  cached_network_image: ^3.3.1
 
   # UI
   google_fonts: ^6.2.1

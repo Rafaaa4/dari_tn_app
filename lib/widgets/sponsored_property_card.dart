@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dari_app/core/theme/app_theme.dart';
 import 'package:dari_app/models/property_model.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,7 +8,8 @@ class SponsoredPropertyCard extends StatelessWidget {
   final PropertyModel property;
   final VoidCallback onTap;
 
-  const SponsoredPropertyCard({super.key, required this.property, required this.onTap});
+  const SponsoredPropertyCard(
+      {super.key, required this.property, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,8 @@ class SponsoredPropertyCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.cardColor(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.sponsored.withValues(alpha: 0.5), width: 1.5),
+          border: Border.all(
+              color: AppTheme.sponsored.withValues(alpha: 0.5), width: 1.5),
           boxShadow: [
             BoxShadow(
               color: AppTheme.sponsored.withValues(alpha: 0.1),
@@ -36,7 +37,8 @@ class SponsoredPropertyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(15)),
                   child: SizedBox(
                     height: 120,
                     width: double.infinity,
@@ -45,7 +47,8 @@ class SponsoredPropertyCard extends StatelessWidget {
                         : Container(
                             color: AppTheme.mutedSurface(context),
                             child: const Center(
-                              child: Icon(Icons.home_rounded, size: 48, color: AppTheme.divider),
+                              child: Icon(Icons.home_rounded,
+                                  size: 48, color: AppTheme.divider),
                             ),
                           ),
                   ),
@@ -63,16 +66,20 @@ class SponsoredPropertyCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_outlined, size: 12, color: AppTheme.textGrey),
+                          const Icon(Icons.location_on_outlined,
+                              size: 12, color: AppTheme.textGrey),
                           Text(property.city,
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textGrey)),
+                              style: const TextStyle(
+                                  fontSize: 11, color: AppTheme.textGrey)),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '${property.price.toInt()} TND${property.priceLabel}',
                         style: GoogleFonts.plusJakartaSans(
-                            fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primary),
                       ),
                     ],
                   ),
@@ -91,11 +98,14 @@ class SponsoredPropertyCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.white, size: 12),
+                    const Icon(Icons.star_rounded,
+                        color: Colors.white, size: 12),
                     const SizedBox(width: 3),
                     Text('Sponsorisé',
                         style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -108,17 +118,23 @@ class SponsoredPropertyCard extends StatelessWidget {
 
   Widget _buildImage(BuildContext context, String path) {
     if (path.startsWith('/')) {
-      return Image.file(File(path), fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(color: AppTheme.mutedSurface(context)));
+      return Image.file(File(path),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              Container(color: AppTheme.mutedSurface(context)));
     }
-    return CachedNetworkImage(
-      imageUrl: path,
+    return Image.network(
+      path,
       fit: BoxFit.cover,
-      placeholder: (_, __) => Container(
-        color: AppTheme.mutedSurface(context),
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      ),
-      errorWidget: (_, __, ___) => Container(color: AppTheme.mutedSurface(context)),
+      loadingBuilder: (_, child, progress) => progress == null
+          ? child
+          : Container(
+              color: AppTheme.mutedSurface(context),
+              child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+      errorBuilder: (_, __, ___) =>
+          Container(color: AppTheme.mutedSurface(context)),
     );
   }
 }
